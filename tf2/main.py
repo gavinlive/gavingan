@@ -21,6 +21,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 #tf.enable_eager_execution()
 
+tf.get_logger().setLevel('ERROR')
 #tf.logging.set_verbosity(tf.logging.INFO)
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
