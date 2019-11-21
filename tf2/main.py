@@ -193,17 +193,14 @@ for epoch in range(max_epochs):
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
-    print(disc_loss.shape)
-    print(gen_loss.shape)
-    print(".")
     if step % print_steps == 0:
       display.clear_output(wait=True)
       examples_per_sec = batch_size / float(duration)
       print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
                 epochs,
                 step,
-                disc_loss,
-                gen_loss,
+                np.mean(disc_loss),
+                np.mean(gen_loss),
                 examples_per_sec,
                 duration))
       #print(epochs,step,duration)
