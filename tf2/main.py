@@ -158,7 +158,7 @@ step = 0
 for epoch in range(max_epochs):
 
   for images in train_dataset:
-      batch_size=images.shape[0]
+    batch_size=images.shape[0]
     start_time = time.time()
 
     # generating noise from a uniform distribution
