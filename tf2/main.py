@@ -178,6 +178,9 @@ for epoch in range(max_epochs):
       real_logits, transformed_real_images = discriminator(images, affine_parameters, training=True)
       fake_logits, transformed_fake_images = discriminator(generated_images, affine_parameters, training=True)
 
+      print(real_logits.shape)
+      print(fake_logits.shape)
+      
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
 
