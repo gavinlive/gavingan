@@ -195,9 +195,9 @@ for epoch in range(max_epochs):
       print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
                 epochs,
                 step,
-                disc_loss,
-                gen_loss,
-                examples_per_sec,
+                disc_loss.numpy(),
+                gen_loss.numpy(),
+                examples_per_sec.numpy(),
                 duration))
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
