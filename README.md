@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Compare GAN
 
 This repository offers TensorFlow implementations for many components related to
@@ -121,3 +122,6 @@ it will automatically download and prepare the data. For ImageNet you will need
 to download the archive yourself. For CelebAHq you need to download and prepare
 the images on your own. If you are using TPUs make sure to point the training
 script to your Google Storage Bucket (`--tfds_data_dir`).
+=======
+Readme
+>>>>>>> fdd034c407b532ed7a98d1d2dc83f92a0ec9de90
