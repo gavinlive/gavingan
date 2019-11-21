@@ -62,7 +62,7 @@ print(train_dataset)
 
 
 generator = Generator()
-discriminator = RotationDiscriminator()
+discriminator = RotationDiscriminator_temp()
 
 
 
@@ -130,7 +130,7 @@ def generate_and_save_images(model, epoch, test_input):
 
 
 
-def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None):
+def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None, prefix=""):
   print_images = sample_data[:max_print,:]
   print_images = print_images.reshape([max_print, 32, 32, 3])
   print_images = print_images.swapaxes(0, 1)
@@ -141,7 +141,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
   plt.imshow(print_images, cmap='gray')
 
   if is_save and epoch is not None:
-    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+    plt.savefig(prefix+'image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
 
 
@@ -172,8 +172,8 @@ for epoch in range(max_epochs):
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
       generated_images = generator(noise, training=True)
 
-      real_logits = discriminator(images, affine_parameters, training=True)
-      fake_logits = discriminator(generated_images, affine_parameters, training=True)
+      real_logits, transformed_real_images = discriminator(images, affine_parameters, training=True)
+      fake_logits, transformed_fake_images = discriminator(generated_images, affine_parameters, training=True)
 
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
@@ -202,6 +202,7 @@ for epoch in range(max_epochs):
     print("This images are saved at {} epoch".format(epoch+1))
     sample_data = generator(random_vector_for_generation, training=False)
     print_or_save_sample_images(sample_data.numpy(), is_save=True, epoch=epoch+1)
+    print_or_save_sample_images(transformed_real_images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_TRANSFORMED_")
 
   # saving (checkpoint) the model every save_epochs
   if (epoch + 1) % save_epochs == 0:
