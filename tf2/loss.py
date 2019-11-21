@@ -1,3 +1,5 @@
+import tensorflow as tf
+
 def GANLoss(logits, is_real=True):
   """Computes standard GAN loss between `logits` and `labels`.
 

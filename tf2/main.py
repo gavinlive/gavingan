@@ -42,25 +42,27 @@ noise_dim = 100
 
 # Load training and eval data from tf.keras
 (train_data, train_labels), _ = \
-    tf.keras.datasets.mnist.load_data()
+    tf.keras.datasets.cifar10.load_data()
 
-train_data = train_data.reshape(-1, 28, 28, 1).astype('float32')
+train_data = train_data.reshape(-1, 32, 32, 3).astype('float32')
 train_data = train_data / 255.
 train_labels = np.asarray(train_labels, dtype=np.int32)
 
 
 
 tf.set_random_seed(219)
+operation_seed = None
 
 # for train
 train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
 train_dataset = train_dataset.shuffle(buffer_size = 60000)
 train_dataset = train_dataset.batch(batch_size = batch_size)
+
 print(train_dataset)
 
 
 generator = Generator()
-discriminator = Discriminator()
+discriminator = RotationDiscriminator()
 
 
 
@@ -71,7 +73,7 @@ discriminator.call = tf.contrib.eager.defun(discriminator.call)
 
 
 
-xw
+
 
 
 
@@ -130,9 +132,9 @@ def generate_and_save_images(model, epoch, test_input):
 
 def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None):
   print_images = sample_data[:max_print,:]
-  print_images = print_images.reshape([max_print, 28, 28])
+  print_images = print_images.reshape([max_print, 32, 32, 3])
   print_images = print_images.swapaxes(0, 1)
-  print_images = print_images.reshape([28, max_print * 28])
+  print_images = print_images.reshape([32, max_print * 32, 3])
 
   plt.figure(figsize=(max_print, 1))
   plt.axis('off')
@@ -157,13 +159,21 @@ for epoch in range(max_epochs):
     start_time = time.time()
 
     # generating noise from a uniform distribution
-    noise = tf.random_normal([batch_size, 1, 1, noise_dim])
+    noise = tf.random_normal([batch_size, 1, 1, noise_dim], seed=operation_seed)
+
+    # Generate the Affine Transforms
+    #translation = tf.random.uniform([batch_size, 2, 1, 1], minval=-10, maxval=10, seed=operation_seed)
+    #rotation = tf.random.uniform([batch_size, 1, 1, 1,], minval=-np.pi, maxval=np.pi)
+    #shear = tf.random.uniform([batch_size, 1, 1, 1,], minval=-np.pi, maxval=np.pi)
+    affine_parameters = tf.random.uniform([batch_size, 6], minval=-2, maxval=2, seed=operation_seed)
+    affine_parameters = tf.concat([affine_parameters, tf.zeros([batch_size, 2])], axis=1)
+
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
       generated_images = generator(noise, training=True)
 
-      real_logits = discriminator(images, training=True)
-      fake_logits = discriminator(generated_images, training=True)
+      real_logits = discriminator(images, affine_parameters, training=True)
+      fake_logits = discriminator(generated_images, affine_parameters, training=True)
 
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
