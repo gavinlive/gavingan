@@ -140,10 +140,10 @@ class RotationDiscriminator_temp(tf.keras.Model):
     conv4 = self.conv4(conv3_bn)
     discriminator_logits = tf.squeeze(conv4, axis=[1, 2])
 
-    transformed = tfa.image.transform(inputs, affine_parameters, name=None)
+    #transformed = tfa.image.transform(inputs, affine_parameters, name=None)
     #transformed = self.transformer(inputs, affine_parameters)
 
-    return discriminator_logits, transformed
+    return discriminator_logits, inputs
 
 
 class AffineDiscriminator(tf.keras.Model):
