@@ -147,6 +147,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
   if is_save and epoch is not None:
     plt.savefig(prefix+'image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
+  plt.close('all')
 
 
 
