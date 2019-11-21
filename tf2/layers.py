@@ -127,7 +127,7 @@ class RotationDiscriminator_temp(tf.keras.Model):
     self.conv3 = layers.Conv2D(256, (3, 3), strides=(2, 2), use_bias=False)
     self.conv3_bn = layers.BatchNormalization()
     self.conv4 = layers.Conv2D(1, (3, 3))
-    self.transformer = ProjectiveTransformer()
+    #self.transformer = ProjectiveTransformer()
 
   def call(self, inputs, affine_parameters=None, training=True):
     if affine_parameters is not None:
