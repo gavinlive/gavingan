@@ -152,7 +152,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
 '''
 Training Loop
 '''
-tf.logging.info('Start Session.')
+#f.logging.info('Start Session.')
 #global_step = tf.train.get_or_create_global_step()
 step = 0
 for epoch in range(max_epochs):
