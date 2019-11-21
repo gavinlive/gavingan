@@ -113,7 +113,7 @@ Training
 '''
 # keeping the random vector constant for generation (prediction) so
 # it will be easier to see the improvement of the gan.
-random_vector_for_generation = tf.random_normal([num_examples_to_generate, 1, 1, noise_dim])
+random_vector_for_generation = tf.random.normal([num_examples_to_generate, 1, 1, noise_dim])
 
 def generate_and_save_images(model, epoch, test_input):
   # make sure the training parameter is set to False because we
