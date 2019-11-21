@@ -175,6 +175,7 @@ for epoch in range(max_epochs):
       generated_images = generator(noise, training=True)
       print("GAN shape")
       print(generated_images.shape)
+      print(images.shape)
 
       real_logits, transformed_real_images = discriminator(images, affine_parameters, training=True)
       fake_logits, transformed_fake_images = discriminator(generated_images, affine_parameters, training=True)
