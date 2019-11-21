@@ -204,7 +204,8 @@ for epoch in range(max_epochs):
                 gen_loss.numpy(),
                 examples_per_sec,
                 duration))'''
-      print(epochs,step,disc_loss,gen_loss,duration)
+      print(epochs,step,duration)
+      #print(epochs,step,disc_loss,gen_loss,duration)
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
 
