@@ -17,6 +17,7 @@ from IPython import display
 
 import tensorflow as tf
 from tensorflow.keras import layers
+import tensorflow_addons as tfa
 
 
 class ProjectiveTransformer(tf.keras.layers.Layer):
