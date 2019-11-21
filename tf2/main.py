@@ -18,7 +18,7 @@ from IPython import display
 
 import tensorflow as tf
 from tensorflow.keras import layers
-tf.enable_eager_execution()
+#tf.enable_eager_execution()
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
