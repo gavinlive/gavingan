@@ -160,7 +160,7 @@ class AffineDiscriminator(tf.keras.Model):
     conv3_bn = self.conv3_bn(conv3, training=training)
     conv4 = self.conv4(conv3_bn)
     discriminator_logits = tf.squeeze(conv4, axis=[1, 2])
-    affine_params = layers.
+    #affine_params = layers.
 
 
     return discriminator_logits
