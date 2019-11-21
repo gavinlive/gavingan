@@ -119,7 +119,7 @@ class RotationDiscriminator(tf.keras.Model):
 
 class RotationDiscriminator_temp(tf.keras.Model):
   def __init__(self):
-    super(Discriminator, self).__init__()
+    super(RotationDiscriminator_temp, self).__init__()
     self.conv1 = layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same')
     self.conv2 = layers.Conv2D(128, (4, 4), strides=(2, 2), use_bias=False)
     self.conv2_bn = layers.BatchNormalization()
