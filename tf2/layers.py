@@ -23,7 +23,7 @@ class ProjectiveTransformer(tf.keras.layers.Layer):
   def __init__(self, name=None):
     # c0, c1 = 0
     super(ProjectiveTransformer, self).__init__()
-    self.name = name
+    #self.name = name
 
   def build(self, input_shape):
     pass
@@ -37,7 +37,7 @@ class ProjectiveTransformer(tf.keras.layers.Layer):
     Vector 1x8 = [a0, a1, a2, b0, b1, b2, c0, c1]
     maps the output point (x, y) to a transformed input point (x', y') = ((a0 x + a1 y + a2) / k, (b0 x + b1 y + b2) / k), where k = c0 x + c1 y + 1
     '''
-    transformed = tfa.image.transform(input, transform_matrix, name=self.name)
+    transformed = tfa.image.transform(input, transform_matrix, name=None)
     return transformed
 
 
