@@ -193,7 +193,9 @@ for epoch in range(max_epochs):
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
-
+    print(disc_loss.shape)
+    print(gen_loss.shape)
+    print(".")
     if step % print_steps == 0:
       display.clear_output(wait=True)
       examples_per_sec = batch_size / float(duration)
