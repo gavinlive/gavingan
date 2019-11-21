@@ -24,7 +24,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-from layers import Generator, Discriminator
+from layers import Generator, Discriminator, RotationDiscriminator_temp
 from loss import GANLoss, discriminator_loss, generator_loss
 
 # Training Flags (hyperparameter configuration)
