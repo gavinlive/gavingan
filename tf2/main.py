@@ -161,7 +161,7 @@ for epoch in range(max_epochs):
     start_time = time.time()
 
     # generating noise from a uniform distribution
-    noise = tf.random_normal([batch_size, 1, 1, noise_dim], seed=operation_seed)
+    noise = tf.random.normal([batch_size, 1, 1, noise_dim], seed=operation_seed)
 
     # Generate the Affine Transforms
     #translation = tf.random.uniform([batch_size, 2, 1, 1], minval=-10, maxval=10, seed=operation_seed)
