@@ -176,15 +176,11 @@ for epoch in range(max_epochs):
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
       generated_images = generator(noise, training=True)
-      print("GAN shape")
-      print(generated_images.shape)
-      print(images.shape)
+
 
       real_logits, transformed_real_images = discriminator(images, affine_parameters, training=True)
       fake_logits, transformed_fake_images = discriminator(generated_images, affine_parameters, training=True)
 
-      print(real_logits.shape)
-      print(fake_logits.shape)
 
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
@@ -208,11 +204,7 @@ for epoch in range(max_epochs):
                 gen_loss.numpy(),
                 examples_per_sec,
                 duration))'''
-      print(epochs)
-      print(step)
-      print(disc_loss)
-      print(gen_loss)
-      print("Step")
+      print(epochs,step,disc_loss,gen_loss,duration)
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
 
