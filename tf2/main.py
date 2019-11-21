@@ -18,18 +18,18 @@ from IPython import display
 
 import tensorflow as tf
 from tensorflow.keras import layers
-#tf.enable_eager_execution()
+tf.enable_eager_execution()
 
-#tf.logging.set_verbosity(tf.logging.INFO)
+tf.logging.set_verbosity(tf.logging.INFO)
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-from layers import Generator, Discriminator, RotationDiscriminator_temp
-from loss import GANLoss, discriminator_loss, generator_loss
+from layers import Generator, Discriminator
+from loss import GANLoss, discriminator_loss, discriminator_loss_rot, generator_loss
 
 # Training Flags (hyperparameter configuration)
 train_dir = 'train/01.dcgan/exp1/'
-max_epochs = 20
+max_epochs = 2000
 save_epochs = 10
 print_steps = 100
 batch_size = 256
@@ -50,26 +50,24 @@ train_labels = np.asarray(train_labels, dtype=np.int32)
 
 
 
-tf.random.set_seed(219)
-operation_seed = None
+tf.set_random_seed(219)
 
 # for train
 train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
 train_dataset = train_dataset.shuffle(buffer_size = 60000)
 train_dataset = train_dataset.batch(batch_size = batch_size)
-
 print(train_dataset)
 
 
 generator = Generator()
-discriminator = RotationDiscriminator_temp()
+discriminator = Discriminator()
 
 
 
 
 # Defun for performance boost
-#generator.call = tf.contrib.eager.defun(generator.call)
-#discriminator.call = tf.contrib.eager.defun(discriminator.call)
+generator.call = tf.contrib.eager.defun(generator.call)
+discriminator.call = tf.contrib.eager.defun(discriminator.call)
 
 
 
@@ -84,11 +82,10 @@ discriminator = RotationDiscriminator_temp()
 
 
 #discriminator_optimizer = tf.train.AdamOptimizer(learning_rate_D, beta1=0.5)
-#discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
-#generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
+discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
+discriminator_rot_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
+generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
 
-discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
 
 
 
@@ -113,7 +110,7 @@ Training
 '''
 # keeping the random vector constant for generation (prediction) so
 # it will be easier to see the improvement of the gan.
-random_vector_for_generation = tf.random.normal([num_examples_to_generate, 1, 1, noise_dim])
+random_vector_for_generation = tf.random_normal([num_examples_to_generate, 1, 1, noise_dim])
 
 def generate_and_save_images(model, epoch, test_input):
   # make sure the training parameter is set to False because we
@@ -132,7 +129,7 @@ def generate_and_save_images(model, epoch, test_input):
 
 
 
-def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None, prefix=""):
+def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None):
   print_images = sample_data[:max_print,:]
   print_images = print_images.reshape([max_print, 32, 32, 3])
   print_images = print_images.swapaxes(0, 1)
@@ -143,7 +140,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
   plt.imshow(print_images, cmap='gray')
 
   if is_save and epoch is not None:
-    plt.savefig(prefix+'image_at_epoch_{:04d}.png'.format(epoch))
+    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
 
 
@@ -152,7 +149,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
 '''
 Training Loop
 '''
-#f.logging.info('Start Session.')
+tf.logging.info('Start Session.')
 #global_step = tf.train.get_or_create_global_step()
 step = 0
 for epoch in range(max_epochs):
@@ -161,36 +158,30 @@ for epoch in range(max_epochs):
     start_time = time.time()
 
     # generating noise from a uniform distribution
-    noise = tf.random.normal([batch_size, 1, 1, noise_dim], seed=operation_seed)
+    noise = tf.random_normal([batch_size, 1, 1, noise_dim])
+    rotation = np.random.randint(4)
 
-    # Generate the Affine Transforms
-    #translation = tf.random.uniform([batch_size, 2, 1, 1], minval=-10, maxval=10, seed=operation_seed)
-    #rotation = tf.random.uniform([batch_size, 1, 1, 1,], minval=-np.pi, maxval=np.pi)
-    #shear = tf.random.uniform([batch_size, 1, 1, 1,], minval=-np.pi, maxval=np.pi)
-    affine_parameters = tf.random.uniform([batch_size, 6], minval=-2, maxval=2, seed=operation_seed)
-    affine_parameters = tf.concat([affine_parameters, tf.zeros([batch_size, 2])], axis=1)
-
-
-    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape:
       generated_images = generator(noise, training=True)
-      print("GAN shape")
-      print(generated_images.shape)
-      print(images.shape)
+      all_images = tf.concat([images, generated_images], axis=0)
+      all_images_rot = np.rot90(all_images, rotation)
 
-      real_logits, transformed_real_images = discriminator(images, affine_parameters, training=True)
-      fake_logits, transformed_fake_images = discriminator(generated_images, affine_parameters, training=True)
+      real_logits = discriminator(images, training=True)
+      fake_logits = discriminator(generated_images, training=True)
 
-      print(real_logits.shape)
-      print(fake_logits.shape)
+      predicted_rotation = discriminator(all_images, training=True, predict_rotation=True)
 
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
+      disc_loss_rot = discriminator_loss_rot(rotation, predicted_rotation)
 
     gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
+    gradients_of_discriminator_rot = disc_rot_tape.gradient(disc_loss_rot, discriminator.variables)
 
     generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.variables))
     discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
+    discriminator_rot_optimizer.apply_gradients(zip(gradients_of_discriminator_rot, discriminator.variables))
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
@@ -198,18 +189,8 @@ for epoch in range(max_epochs):
     if step % print_steps == 0:
       display.clear_output(wait=True)
       examples_per_sec = batch_size / float(duration)
-      '''print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
-                epochs,
-                step,
-                disc_loss.numpy(),
-                gen_loss.numpy(),
-                examples_per_sec,
-                duration))'''
-      print(epochs)
-      print(step)
-      print(disc_loss)
-      print(gen_loss)
-      print("Step")
+      print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
+                epochs, step, disc_loss, gen_loss, examples_per_sec, duration))
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
 
@@ -220,7 +201,6 @@ for epoch in range(max_epochs):
     print("This images are saved at {} epoch".format(epoch+1))
     sample_data = generator(random_vector_for_generation, training=False)
     print_or_save_sample_images(sample_data.numpy(), is_save=True, epoch=epoch+1)
-    print_or_save_sample_images(transformed_real_images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_TRANSFORMED_")
 
   # saving (checkpoint) the model every save_epochs
   if (epoch + 1) % save_epochs == 0:
