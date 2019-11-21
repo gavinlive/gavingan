@@ -68,8 +68,8 @@ discriminator = RotationDiscriminator_temp()
 
 
 # Defun for performance boost
-generator.call = tf.contrib.eager.defun(generator.call)
-discriminator.call = tf.contrib.eager.defun(discriminator.call)
+#generator.call = tf.contrib.eager.defun(generator.call)
+#discriminator.call = tf.contrib.eager.defun(discriminator.call)
 
 
 
