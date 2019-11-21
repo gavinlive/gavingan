@@ -191,6 +191,7 @@ for epoch in range(max_epochs):
 
     if step % print_steps == 0:
       display.clear_output(wait=True)
+      print(duration)
       examples_per_sec = batch_size / float(duration)
       print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
                 epochs,
