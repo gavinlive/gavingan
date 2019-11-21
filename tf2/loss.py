@@ -15,7 +15,8 @@ def GANLoss(logits, is_real=True):
   else:
     labels = tf.zeros_like(logits)
 
-  return tf.nn.sigmoid_cross_entropy_with_logits(labels,logits)
+  return tf.reduce_mean(
+    tf.nn.sigmoid_cross_entropy_with_logits(labels,logits), axis=[1])
 
 
 

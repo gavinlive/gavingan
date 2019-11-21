@@ -197,14 +197,14 @@ for epoch in range(max_epochs):
     if step % print_steps == 0:
       display.clear_output(wait=True)
       examples_per_sec = batch_size / float(duration)
-      '''print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
+      print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
                 epochs,
                 step,
-                disc_loss.numpy(),
-                gen_loss.numpy(),
+                disc_loss,
+                gen_loss,
                 examples_per_sec,
-                duration))'''
-      print(epochs,step,duration)
+                duration))
+      #print(epochs,step,duration)
       #print(epochs,step,disc_loss,gen_loss,duration)
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
