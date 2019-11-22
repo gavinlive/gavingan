@@ -45,7 +45,7 @@ class SpectralNormalization(Wrapper):
             self.w_shape = self.w.shape.as_list()
             self.u = self.add_variable(
                 shape=tuple([1, self.w_shape[-1]]),
-                initializer=k.initializers.TruncatedNormal(stddev=0.02),
+                initializer=tf.keras.initializers.TruncatedNormal(stddev=0.02),
                 name='sn_u',
                 trainable=False,
                 dtype=tf.float32)
