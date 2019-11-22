@@ -43,6 +43,7 @@ noise_dim = 100
 full_save_epochs = 1
 full_save_num_images = 49920
 second_unpaired = True
+spectral_norm = False
 
 
 # Load training and eval data from tf.keras
@@ -66,8 +67,8 @@ train_dataset = train_dataset.shuffle(buffer_size = 60000)
 train_dataset = train_dataset.batch(batch_size = batch_size)
 
 
-generator = Generator()
-discriminator = Discriminator()
+generator = Generator(spectral_norm=False)
+discriminator = Discriminator(spectral_norm=False)
 
 discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
