@@ -70,9 +70,8 @@ train_dataset = train_dataset.batch(batch_size = batch_size)
 generator = Generator()
 discriminator = Discriminator()
 
-discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate_D, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D, beta_1=0.5)
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
-
 
 '''
 Checkpointing
