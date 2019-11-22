@@ -168,7 +168,7 @@ for epoch in range(max_epochs):
     # generating noise from a uniform distribution
     noise = tf.random.normal([batch_size, 1, 1, noise_dim])
     rotation_n = tf.random.uniform([], minval=1, maxval=4, dtype=tf.dtypes.int32, seed=operation_seed)
-    rotation = rotation_n * np.pi/2.
+    rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape:
       generated_images = generator(noise, training=True)
