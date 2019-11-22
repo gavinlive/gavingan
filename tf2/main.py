@@ -70,24 +70,13 @@ train_dataset = train_dataset.batch(batch_size = batch_size)
 generator = Generator()
 discriminator = Discriminator()
 
-# Defun for performance boost
-#generator.call = tf.contrib.eager.defun(generator.call)
-#discriminator.call = tf.contrib.eager.defun(discriminator.call)
-
-#discriminator_optimizer = tf.train.AdamOptimizer(learning_rate_D, beta1=0.5)
-#discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
-#generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
-
 discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate_D, beta_1=0.5)
-if second_unpaired is True:
-    discriminator_optimizer_2 = tf.keras.optimizers.Adam(learning_rate_D, beta_1=0.5)
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
 
 
 '''
 Checkpointing
 '''
-#checkpoint_dir = './training_checkpoints'
 checkpoint_dir =  train_dir
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 for_checkpointing = {
@@ -96,8 +85,6 @@ for_checkpointing = {
     'generator': generator,
     'discriminator': discriminator
     }
-if second_unpaired is True:
-    for_checkpointing["discriminator_optimizer_2"] =  discriminator_optimizer_2
 checkpoint = tf.train.Checkpoint(**for_checkpointing)
 
 '''
@@ -166,20 +153,11 @@ for epoch in range(max_epochs):
         noise_2 = tf.random.normal([batch_size, 1, 1, noise_dim])
     rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
-    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape, tf.GradientTape() as disc_2_tape:
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
       generated_images = generator(noise, training=True)
-      images_rot = tf.image.rot90(images, k=rotation_n)
-      generated_images_rot = tf.image.rot90(generated_images, k=rotation_n)
 
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
-      real_logits_rot = discriminator(images_rot, training=True, predict_rotation=True)
-      fake_logits_rot = discriminator(generated_images_rot, training=True, predict_rotation=True)
-
-      if second_unpaired is True:
-          generated_images_2 = generator(noise_2, training=True)
-          fake_logits_2 = discriminator(generated_images_2, training=True)
-          disc_loss_2 = discriminator_loss(real_logits, fake_logits_2, rotation_n, real_logits_rot) # [] CHECK
 
       gen_loss = generator_loss(fake_logits, rotation_n, fake_logits_rot)
       disc_loss = discriminator_loss(real_logits, fake_logits, rotation_n, real_logits_rot)
@@ -192,9 +170,6 @@ for epoch in range(max_epochs):
     discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
     # discriminator_rot_optimizer.apply_gradients(zip(gradients_of_discriminator_rot, discriminator.variables))
 
-    if second_unpaired is True:
-        gradients_of_discriminator_2 = disc_2_tape.gradient(disc_loss_2, discriminator.variables)
-        discriminator_optimizer_2.apply_gradients(zip(gradients_of_discriminator_2, discriminator.variables))
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
@@ -219,12 +194,11 @@ for epoch in range(max_epochs):
     sample_data = generator(random_vector_for_generation, training=False)
     print_or_save_sample_images(sample_data.numpy(), is_save=True, epoch=epoch+1)
     print_or_save_sample_images(images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_")
-    print_or_save_sample_images(images_rot.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_TRANSFORMED_")
 
   # saving (checkpoint) the model every save_epochs
   if (epoch + 1) % save_epochs == 0:
     checkpoint.save(file_prefix = checkpoint_prefix)
-    
+
 
   # Save full batch of training images to calculate FID
   if (epoch + 1) % full_save_epochs == 0:
