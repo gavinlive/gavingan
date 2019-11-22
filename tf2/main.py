@@ -85,9 +85,9 @@ discriminator = Discriminator()
 
 
 #discriminator_optimizer = tf.train.AdamOptimizer(learning_rate_D, beta1=0.5)
-discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
-discriminator_rot_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
-generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
+#discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
+#discriminator_rot_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
+#generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
 
 
 discriminator_rot_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
