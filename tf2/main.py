@@ -136,7 +136,7 @@ def generate_and_save_images(model, epoch, test_input):
 
 
 
-def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None):
+def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None, prefix=""):
   print_images = sample_data[:max_print,:]
   print_images = print_images.reshape([max_print, 32, 32, 3])
   print_images = print_images.swapaxes(0, 1)
@@ -147,7 +147,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
   plt.imshow(print_images, cmap='gray')
 
   if is_save and epoch is not None:
-    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+    plt.savefig(prefix+'image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
   plt.close('all')
 
