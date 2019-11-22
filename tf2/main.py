@@ -53,7 +53,7 @@ train_labels = np.asarray(train_labels, dtype=np.int32)
 
 
 tf.random.set_seed(219)
-operation_seed = 1114
+operation_seed = None
 
 # for train
 train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
@@ -69,8 +69,8 @@ discriminator = Discriminator()
 
 
 # Defun for performance boost
-generator.call = tf.contrib.eager.defun(generator.call)
-discriminator.call = tf.contrib.eager.defun(discriminator.call)
+#generator.call = tf.contrib.eager.defun(generator.call)
+#discriminator.call = tf.contrib.eager.defun(discriminator.call)
 
 
 
@@ -90,6 +90,11 @@ discriminator_rot_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
 generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
 
 
+discriminator_rot_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
+discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
+generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
+
+
 
 
 
@@ -101,7 +106,7 @@ Checkpointing
 checkpoint_dir = train_dir
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
-                                 discriminator_optimizer=discriminator_optimizer, generator=generator, discriminator=discriminator)
+                                 discriminator_optimizer=discriminator_optimizer,discriminator_rot_optimizer=discriminator_rot_optimizer, generator=generator, discriminator=discriminator)
 
 
 
@@ -111,7 +116,7 @@ Training
 '''
 # keeping the random vector constant for generation (prediction) so
 # it will be easier to see the improvement of the gan.
-random_vector_for_generation = tf.random_normal([num_examples_to_generate, 1, 1, noise_dim])
+random_vector_for_generation = tf.random.normal([num_examples_to_generate, 1, 1, noise_dim])
 
 def generate_and_save_images(model, epoch, test_input):
   # make sure the training parameter is set to False because we
@@ -152,7 +157,6 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
 '''
 Training Loop
 '''
-tf.logging.info('Start Session.')
 #global_step = tf.train.get_or_create_global_step()
 step = 0
 for epoch in range(max_epochs):
@@ -162,7 +166,7 @@ for epoch in range(max_epochs):
     start_time = time.time()
 
     # generating noise from a uniform distribution
-    noise = tf.random_normal([batch_size, 1, 1, noise_dim])
+    noise = tf.random.normal([batch_size, 1, 1, noise_dim])
     rotation_n = tf.random.uniform([], minval=1, maxval=4, dtype=tf.dtypes.int32, seed=operation_seed)
     rotation = rotation_n * np.pi/2.
 
