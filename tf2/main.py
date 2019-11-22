@@ -29,7 +29,7 @@ from loss import GANLoss, discriminator_loss, discriminator_loss_rot, generator_
 
 # Training Flags (hyperparameter configuration)
 train_dir = 'train/01.dcgan/exp1/'
-max_epochs = 2000
+max_epochs = 5000
 save_epochs = 10
 print_steps = 100
 batch_size = 256
@@ -48,13 +48,11 @@ train_data = train_data.reshape(-1, 32, 32, 3).astype('float32')
 train_data = train_data / 255.
 train_labels = np.asarray(train_labels, dtype=np.int32)
 
-
-
 tf.set_random_seed(219)
 
 # for train
 train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
-train_dataset = train_dataset.shuffle(buffer_size = 60000)
+train_dataset = train_dataset.shuffle(buffer_size = 59904)
 train_dataset = train_dataset.batch(batch_size = batch_size)
 print(train_dataset)
 
@@ -63,22 +61,9 @@ generator = Generator()
 discriminator = Discriminator()
 
 
-
-
 # Defun for performance boost
 generator.call = tf.contrib.eager.defun(generator.call)
 discriminator.call = tf.contrib.eager.defun(discriminator.call)
-
-
-
-
-
-
-
-
-
-
-
 
 
 #discriminator_optimizer = tf.train.AdamOptimizer(learning_rate_D, beta1=0.5)
@@ -87,22 +72,17 @@ discriminator_rot_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
 generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
 
 
-
-
-
-
 '''
 Checkpointing
 '''
 #checkpoint_dir = './training_checkpoints'
-checkpoint_dir = train_dir
+checkpoint_dir =  train_dir
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  discriminator_optimizer=discriminator_optimizer,
+                                 discriminator_rot_optimizer=discriminator_rot_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
-
-
 
 
 '''
@@ -124,9 +104,8 @@ def generate_and_save_images(model, epoch, test_input):
     plt.imshow(predictions[i, :, :, 0], cmap='gray')
     plt.axis('off')
 
-  plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+  plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
-
 
 
 def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None):
@@ -140,10 +119,8 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
   plt.imshow(print_images, cmap='gray')
 
   if is_save and epoch is not None:
-    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+    plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
-
-
 
 
 '''
@@ -169,11 +146,11 @@ for epoch in range(max_epochs):
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
 
-      predicted_rotation = discriminator(all_images, training=True, predict_rotation=True)
+      predicted_rotation = discriminator(all_images_rot, training=True, predict_rotation=True)
 
       gen_loss = generator_loss(fake_logits)
-      disc_loss = discriminator_loss(real_logits, fake_logits)
-      disc_loss_rot = discriminator_loss_rot(rotation, predicted_rotation)
+      disc_loss = discriminator_loss(real_logits, fake_logits) / 2.
+      disc_loss_rot = discriminator_loss_rot(rotation, predicted_rotation) / 2.
 
     gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
@@ -189,8 +166,8 @@ for epoch in range(max_epochs):
     if step % print_steps == 0:
       display.clear_output(wait=True)
       examples_per_sec = batch_size / float(duration)
-      print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
-                epochs, step, disc_loss, gen_loss, examples_per_sec, duration))
+      print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_R: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
+                epochs, step, disc_loss, disc_loss_rot, gen_loss, examples_per_sec, duration))
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
 
@@ -207,8 +184,6 @@ for epoch in range(max_epochs):
     checkpoint.save(file_prefix = checkpoint_prefix)
 
 
-
-
 '''
 Final Epoch
 '''
@@ -219,25 +194,18 @@ sample_data = generator(random_vector_for_generation, training=False)
 print_or_save_sample_images(sample_data.numpy(), is_save=True, epoch=max_epochs)
 
 
-
-
-
 '''
 Restore Checkpoint
 '''
-
 # restoring the latest checkpoint in checkpoint_dir
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
-
 
 
 '''
 Image Epoch Number
 '''
-
-
 def display_image(epoch_no):
-  return PIL.Image.open('image_at_epoch_{:04d}.png'.format(epoch_no))
+  return PIL.Image.open('images/image_at_epoch_{:04d}.png'.format(epoch_no))
 display_image(max_epochs)
 
 
@@ -261,6 +229,4 @@ with imageio.get_writer('dcgan.gif', mode='I') as writer:
 
 # this is a hack to display the gif inside the notebook
 os.system('cp dcgan.gif dcgan.gif.png')
-
-
 display.Image(filename="dcgan.gif.png")
