@@ -25,7 +25,6 @@ from tensorflow.keras import layers
 tf.get_logger().setLevel('ERROR')
 #tf.logging.set_verbosity(tf.logging.INFO)
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 from layers import Generator, Discriminator
 from loss import discriminator_loss, generator_loss
