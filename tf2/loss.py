@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+
 def GANLoss(logits, is_real=True):
   """Computes standard GAN loss between `logits` and `labels`.
 
@@ -20,29 +21,29 @@ def GANLoss(logits, is_real=True):
     tf.nn.sigmoid_cross_entropy_with_logits(labels,logits), axis=[1])
 
 
-
-
-def discriminator_loss(real_logits, fake_logits):
-    # losses of real with label "1"
-    real_loss = GANLoss(logits=real_logits, is_real=True)
-    # losses of fake with label "0"
-    fake_loss = GANLoss(logits=fake_logits, is_real=False)
-
-    total_loss = real_loss + fake_loss
-
-    return total_loss
-
-
-def discriminator_loss_rot(rotation_real, rotation_pred):
+def rotation_loss(rotation_real, rotation_pred):
     batch_size = rotation_pred.shape[0]
     labels = np.full((batch_size), rotation_real)
     labels = tf.one_hot(labels, 4)
     rotation_loss = tf.reduce_mean(
-      tf.nn.sigmoid_cross_entropy_with_logits(labels,rotation_pred), axis=[1])
-    #print(rotation_loss)
+      tf.nn.sigmoid_cross_entropy_with_logits(labels, rotation_pred), axis=[1])
+      
     return rotation_loss
 
 
-def generator_loss(fake_logits):
+def discriminator_loss(real_logits, fake_logits, rotation_real, real_logits_rot):
+    # losses of real with label "1"
+    real_loss = GANLoss(logits=real_logits, is_real=True)
+    # losses of fake with label "0"
+    fake_loss = GANLoss(logits=fake_logits, is_real=False)
+    rot_loss = rotation_loss(rotation_real, real_logits_rot)
+
+    total_loss = real_loss + fake_loss + rot_loss
+
+    return total_loss
+
+
+def generator_loss(fake_logits, rotation_real, fake_logits_rot):
   # losses of Generator with label "1" that used to fool the Discriminator
-  return GANLoss(logits=fake_logits, is_real=True)
+  alpha = 0.2
+  return GANLoss(logits=fake_logits, is_real=True) + alpha * rotation_loss(rotation_real, fake_logits_rot)

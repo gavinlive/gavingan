@@ -19,8 +19,8 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 
-
 class Generator(tf.keras.Model):
+
   def __init__(self):
     super(Generator, self).__init__()
     self.conv1 = layers.Conv2DTranspose(filters=256, kernel_size=(3, 3), strides=(2, 2), use_bias=False)
@@ -51,9 +51,8 @@ class Generator(tf.keras.Model):
     return generated_data
 
 
-
-
 class Discriminator(tf.keras.Model):
+
   def __init__(self):
     super(Discriminator, self).__init__()
     self.conv1 = layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same')
