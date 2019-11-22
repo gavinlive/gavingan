@@ -89,8 +89,8 @@ class Generator(tf.keras.Model):
   def __init__(self, spectral_norm=True):
     super(Generator, self).__init__()
 
-    def Conv2DTranspose(**args, **kwargs):
-        layer = layers.Conv2DTranspose(**args, **kwargs)
+    def Conv2DTranspose(*args, **kwargs):
+        layer = layers.Conv2DTranspose(*args, **kwargs)
         layer = SpectralNormalization(layer) if spectral_norm is True else layer
         return layer
 
@@ -126,8 +126,8 @@ class Discriminator(tf.keras.Model):
 
   def __init__(self, spectral_norm=True):
     super(Discriminator, self).__init__()
-    def Conv2D(**args, **kwargs):
-        layer = layers.Conv2D(**args, **kwargs)
+    def Conv2D(*args, **kwargs):
+        layer = layers.Conv2D(*args, **kwargs)
         layer = SpectralNormalization(layer) if spectral_norm is True else layer
         return layer
 
