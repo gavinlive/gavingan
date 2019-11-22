@@ -37,10 +37,9 @@ def discriminator_loss_rot(rotation_real, rotation_pred):
     batch_size = rotation_pred.shape[0]
     labels = np.full((batch_size), rotation_real)
     labels = tf.one_hot(labels, 4)
-    rotation_loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=labels, logits=rotation_pred)
-
+    rotation_loss = tf.reduce_mean(
+      tf.nn.sigmoid_cross_entropy_with_logits(labels,rotation_pred), axis=[1])
     #print(rotation_loss)
-
     return rotation_loss
 
 
