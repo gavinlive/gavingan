@@ -139,7 +139,9 @@ class Discriminator(tf.keras.Model):
 
     self.conv4_base = Conv2D(1, (3, 3))
 
-    self.conv4_rot = layers.Dense(4, input_shape=(512, 256*3*3))
+    self.conv4_rep = layers.Dense(16, input_shape=(512, 256*3*3))
+
+    self.conv5_rot = layers.Dense(4, input_shape=(512, 256*3*3))
 
 
   def call(self, inputs, training=True, predict_rotation=False):
@@ -154,7 +156,8 @@ class Discriminator(tf.keras.Model):
       return rotation_class
     else:
       conv4_base = self.conv4_base(conv3_bn)
-      discriminator_logits = tf.squeeze(conv4_base, axis=[1, 2])
+      conv4_rep = self.conv4_base(conv4_base)
+      discriminator_logits = tf.squeeze(conv4_rep, axis=[1, 2])
       return discriminator_logits
 
 

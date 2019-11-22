@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from contextlib import ExitStack
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
@@ -150,6 +151,15 @@ for epoch in range(max_epochs):
     rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape, tf.GradientTape() as disc_2_tape:
+
+     ctx_managers_names = ['gen_tape', 'disc_tape', 'disc_rot_tape']
+     if second_unpaired is True:
+         ctx_managers_names.append('disc_2_tape')
+     ctx_managers = [tf.GradientTape() for x in ctx_managers_names]
+     with ExitStack() as stack:
+      for jj, mgr in enumerate(ctx_managers):
+        #stack.enter_context(mgr)
+        exec(ctx_managers_names[jj] + '=stack.enter_context(mgr)')
       generated_images = generator(noise, training=True)
       images_rot = tf.image.rot90(images, k=rotation_n)
       generated_images_rot = tf.image.rot90(generated_images, k=rotation_n)
@@ -162,7 +172,9 @@ for epoch in range(max_epochs):
 
       if second_unpaired is True:
           generated_images_2 = generator(noise_2, training=True)
+          generated_images_rot_2 = tf.image.rot90(generated_images_2, k=rotation_n)
           fake_logits_2 = discriminator(generated_images_2, training=True)
+          fake_logits_rot_2 = discriminator(generated_images_rot_2, training=True, predict_rotation=True)
           disc_loss_2 = discriminator_loss(real_logits, fake_logits_2, rotation_n, real_logits_rot) # [] CHECK
 
       gen_loss = generator_loss(fake_logits, rotation_n, fake_logits_rot)
@@ -176,9 +188,14 @@ for epoch in range(max_epochs):
     discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
     # discriminator_rot_optimizer.apply_gradients(zip(gradients_of_discriminator_rot, discriminator.variables))
 
+    '''
     if second_unpaired is True:
         gradients_of_discriminator_2 = disc_2_tape.gradient(disc_loss_2, discriminator.variables)
         discriminator_optimizer_2.apply_gradients(zip(gradients_of_discriminator_2, discriminator.variables))
+    '''
+    '''
+    Have fake_logits, fake_logits_2
+    '''
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
