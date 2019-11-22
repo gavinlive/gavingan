@@ -159,8 +159,8 @@ for epoch in range(max_epochs):
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
 
-      gen_loss = generator_loss(fake_logits, rotation_n, fake_logits_rot)
-      disc_loss = discriminator_loss(real_logits, fake_logits, rotation_n, real_logits_rot)
+      gen_loss = generator_loss(fake_logits, rotation_n)
+      disc_loss = discriminator_loss(real_logits, fake_logits)
 
     gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
