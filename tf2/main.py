@@ -52,7 +52,7 @@ train_labels = np.asarray(train_labels, dtype=np.int32)
 
 
 
-tf.set_random_seed(219)
+tf.random.set_seed(219)
 operation_seed = 1114
 
 # for train
