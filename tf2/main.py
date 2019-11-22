@@ -162,7 +162,7 @@ for epoch in range(max_epochs):
       if second_unpaired is True:
           generated_images_2 = generator(noise_2, training=True)
           fake_logits_2 = discriminator(generated_images_2, training=True)
-          disc_loss_2 = discriminator_loss(real_logits, fake_logits_2)
+          disc_loss_2 = discriminator_loss(real_logits, fake_logits_2, rotation_n, real_logits_rot) # [] CHECK
 
       gen_loss = generator_loss(fake_logits, rotation_n, fake_logits_rot)
       disc_loss = discriminator_loss(real_logits, fake_logits, rotation_n, real_logits_rot)
