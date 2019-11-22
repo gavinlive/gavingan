@@ -88,7 +88,7 @@ for_checkpointing = {
 
 if second_unpaired is True:
     for_checkpointing["discriminator_optimizer_2"] =  discriminator_optimizer_2
-checkpoint = tf.train.Checkpoint(for_checkpointing)
+checkpoint = tf.train.Checkpoint(**for_checkpointing)
 
 '''
 Training
