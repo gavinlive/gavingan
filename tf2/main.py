@@ -8,6 +8,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 import time
 import glob
+import h5py
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,7 +25,7 @@ from tensorflow.keras import layers
 tf.get_logger().setLevel('ERROR')
 #tf.logging.set_verbosity(tf.logging.INFO)
 
-#os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 from layers import Generator, Discriminator
 from loss import discriminator_loss, generator_loss
@@ -40,6 +41,8 @@ learning_rate_G = 0.0002
 k = 1 # the number of step of learning D before learning G
 num_examples_to_generate = 16
 noise_dim = 100
+full_save_epochs = 500
+full_save_num_images = 59904
 second_unpaired = True
 
 
@@ -52,25 +55,31 @@ train_data = train_data / 255.
 train_labels = np.asarray(train_labels, dtype=np.int32)
 
 
-
-tf.random.set_seed(219)
+tf.random.set_seed(69)
 operation_seed = None
 
 # for train
 train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
 train_dataset = train_dataset.shuffle(buffer_size = 59904)
 train_dataset = train_dataset.batch(batch_size = batch_size)
-print(train_dataset)
 
 
 generator = Generator()
 discriminator = Discriminator()
 
-discriminator_rot_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
-discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
+# Defun for performance boost
+#generator.call = tf.contrib.eager.defun(generator.call)
+#discriminator.call = tf.contrib.eager.defun(discriminator.call)
+
+#discriminator_optimizer = tf.train.AdamOptimizer(learning_rate_D, beta1=0.5)
+#discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
+#generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
+
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate_D, beta_1=0.5)
 if second_unpaired is True:
-    discriminator_optimizer_2 = tf.keras.optimizers.RMSprop(learning_rate_D)
+    discriminator_optimizer_2 = tf.keras.optimizers.Adam(learning_rate_D, beta_1=0.5)
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
+
 
 '''
 Checkpointing
@@ -81,11 +90,9 @@ checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 for_checkpointing = {
     'generator_optimizer': generator_optimizer,
     'discriminator_optimizer': discriminator_optimizer,
-    'discriminator_rot_optimizer': discriminator_rot_optimizer,
     'generator': generator,
     'discriminator': discriminator
     }
-
 if second_unpaired is True:
     for_checkpointing["discriminator_optimizer_2"] =  discriminator_optimizer_2
 checkpoint = tf.train.Checkpoint(**for_checkpointing)
@@ -144,9 +151,9 @@ for epoch in range(max_epochs):
 
     # generating noise from a uniform distribution
     noise = tf.random.normal([batch_size, 1, 1, noise_dim])
+    rotation_n = tf.random.uniform([], minval=0, maxval=3, dtype=tf.dtypes.int32, seed=operation_seed)
     if second_unpaired is True:
         noise_2 = tf.random.normal([batch_size, 1, 1, noise_dim])
-    rotation_n = tf.random.uniform([], minval=1, maxval=4, dtype=tf.dtypes.int32, seed=operation_seed)
     rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape, tf.GradientTape() as disc_2_tape:
@@ -158,7 +165,6 @@ for epoch in range(max_epochs):
       fake_logits = discriminator(generated_images, training=True)
       real_logits_rot = discriminator(images_rot, training=True, predict_rotation=True)
       fake_logits_rot = discriminator(generated_images_rot, training=True, predict_rotation=True)
-
 
       if second_unpaired is True:
           generated_images_2 = generator(noise_2, training=True)
@@ -208,6 +214,16 @@ for epoch in range(max_epochs):
   # saving (checkpoint) the model every save_epochs
   if (epoch + 1) % save_epochs == 0:
     checkpoint.save(file_prefix = checkpoint_prefix)
+    
+
+  # Save full batch of training images to calculate FID
+  if (epoch + 1) % full_save_epochs == 0:
+    random_vector_for_full_save = tf.random.normal([full_save_num_images, 1, 1, noise_dim])
+    sample_data = generator(random_vector_for_full_save, training=False)
+    sample_blob = sample_data.numpy()
+    h5f = h5py.File('imageblob_epoch{}.h5'.format(epoch+1), 'w')
+    h5f.create_dataset('imageblob', data=sample_blob)
+    h5f.close()
 
 
 '''
