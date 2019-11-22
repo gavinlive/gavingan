@@ -148,10 +148,6 @@ for epoch in range(max_epochs):
 
     # generating noise from a uniform distribution
     noise = tf.random.normal([batch_size, 1, 1, noise_dim])
-    rotation_n = tf.random.uniform([], minval=0, maxval=3, dtype=tf.dtypes.int32, seed=operation_seed)
-    if second_unpaired is True:
-        noise_2 = tf.random.normal([batch_size, 1, 1, noise_dim])
-    rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
       generated_images = generator(noise, training=True)
@@ -159,7 +155,7 @@ for epoch in range(max_epochs):
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
 
-      gen_loss = generator_loss(fake_logits, rotation_n)
+      gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
 
     gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
