@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 import time
 import glob
@@ -20,7 +21,8 @@ import tensorflow as tf
 from tensorflow.keras import layers
 tf.enable_eager_execution()
 
-tf.logging.set_verbosity(tf.logging.INFO)
+tf.get_logger().setLevel('ERROR')
+#tf.logging.set_verbosity(tf.logging.INFO)
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
@@ -98,9 +100,7 @@ Checkpointing
 checkpoint_dir = train_dir
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
-                                 discriminator_optimizer=discriminator_optimizer,
-                                 generator=generator,
-                                 discriminator=discriminator)
+                                 discriminator_optimizer=discriminator_optimizer, generator=generator, discriminator=discriminator)
 
 
 
@@ -142,6 +142,7 @@ def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate,
   if is_save and epoch is not None:
     plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
   plt.show()
+  plt.close('all')
 
 
 
@@ -155,6 +156,7 @@ step = 0
 for epoch in range(max_epochs):
 
   for images in train_dataset:
+    batch_size=images.shape[0]
     start_time = time.time()
 
     # generating noise from a uniform distribution
@@ -163,13 +165,11 @@ for epoch in range(max_epochs):
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape:
       generated_images = generator(noise, training=True)
-      all_images = tf.concat([images, generated_images], axis=0)
-      all_images_rot = np.rot90(all_images, rotation)
+
 
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
 
-      predicted_rotation = discriminator(all_images, training=True, predict_rotation=True)
 
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
@@ -185,12 +185,16 @@ for epoch in range(max_epochs):
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
-
     if step % print_steps == 0:
       display.clear_output(wait=True)
       examples_per_sec = batch_size / float(duration)
       print("Epochs: {:.2f} global_step: {} loss_D: {:.3f} loss_G: {:.3f} ({:.2f} examples/sec; {:.3f} sec/batch)".format(
-                epochs, step, disc_loss, gen_loss, examples_per_sec, duration))
+                epochs,
+                step,
+                np.mean(disc_loss),
+                np.mean(gen_loss),
+                examples_per_sec,
+                duration))
       sample_data = generator(random_vector_for_generation, training=False)
       print_or_save_sample_images(sample_data.numpy())
 
