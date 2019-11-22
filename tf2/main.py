@@ -40,6 +40,7 @@ learning_rate_G = 0.005
 k = 1 # the number of step of learning D before learning G
 num_examples_to_generate = 16
 noise_dim = 100
+second_unpaired = True
 
 
 # Load training and eval data from tf.keras
@@ -65,22 +66,11 @@ print(train_dataset)
 generator = Generator()
 discriminator = Discriminator()
 
-
-# Defun for performance boost
-#generator.call = tf.contrib.eager.defun(generator.call)
-#discriminator.call = tf.contrib.eager.defun(discriminator.call)
-
-
-#discriminator_optimizer = tf.train.AdamOptimizer(learning_rate_D, beta1=0.5)
-#discriminator_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
-#discriminator_rot_optimizer = tf.train.RMSPropOptimizer(learning_rate_D)
-#generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
-
-
 discriminator_rot_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
 discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
+if second_unpaired is True:
+    discriminator_optimizer_2 = tf.keras.optimizers.RMSprop(learning_rate_D)
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
-
 
 '''
 Checkpointing
@@ -88,9 +78,17 @@ Checkpointing
 #checkpoint_dir = './training_checkpoints'
 checkpoint_dir =  train_dir
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
-                                 discriminator_optimizer=discriminator_optimizer,discriminator_rot_optimizer=discriminator_rot_optimizer, generator=generator, discriminator=discriminator)
+for_checkpointing = {
+    'generator_optimizer': generator_optimizer,
+    'discriminator_optimizer': discriminator_optimizer,
+    'discriminator_rot_optimizer': discriminator_rot_optimizer,
+    'generator': generator,
+    'discriminator': discriminator
+    }
 
+if second_unpaired is True:
+    for_checkpointing["discriminator_optimizer_2"] =  discriminator_optimizer_2
+checkpoint = tf.train.Checkpoint(for_checkpointing)
 
 '''
 Training
@@ -146,16 +144,22 @@ for epoch in range(max_epochs):
 
     # generating noise from a uniform distribution
     noise = tf.random.normal([batch_size, 1, 1, noise_dim])
+    if second_unpaired is True:
+        noise_2 = tf.random.normal([batch_size, 1, 1, noise_dim])
     rotation_n = tf.random.uniform([], minval=1, maxval=4, dtype=tf.dtypes.int32, seed=operation_seed)
     rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
-    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape:
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape, tf.GradientTape() as disc_2_tape:
       generated_images = generator(noise, training=True)
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
       rotated_images = tf.image.rot90(images, k=rotation_n)
       fake_rot_logits = discriminator(rotated_images, training=True, predict_rotation=True)
 
+      if second_unpaired is True:
+          generated_images_2 = generator(noise_2, training=True)
+          fake_logits_2 = discriminator(generated_images_2, training=True)
+          disc_loss_2 = discriminator_loss(real_logits, fake_logits_2)
 
       gen_loss = generator_loss(fake_logits)
       disc_loss = discriminator_loss(real_logits, fake_logits)
@@ -168,6 +172,10 @@ for epoch in range(max_epochs):
     generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.variables))
     discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
     discriminator_rot_optimizer.apply_gradients(zip(gradients_of_discriminator_rot, discriminator.variables))
+
+    if second_unpaired is True:
+        gradients_of_discriminator_2 = disc_2_tape.gradient(disc_loss_2, discriminator.variables)
+        discriminator_optimizer_2.apply_gradients(zip(gradients_of_discriminator_2, discriminator.variables))
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
