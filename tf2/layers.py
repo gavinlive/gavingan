@@ -19,8 +19,8 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 
-
 class Generator(tf.keras.Model):
+
   def __init__(self):
     super(Generator, self).__init__()
     self.conv1 = layers.Conv2DTranspose(filters=256, kernel_size=(3, 3), strides=(2, 2), use_bias=False)
@@ -51,9 +51,8 @@ class Generator(tf.keras.Model):
     return generated_data
 
 
-
-
 class Discriminator(tf.keras.Model):
+
   def __init__(self):
     super(Discriminator, self).__init__()
     self.conv1 = layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same')
@@ -64,8 +63,7 @@ class Discriminator(tf.keras.Model):
 
     self.conv4_base = layers.Conv2D(1, (3, 3))
     
-    self.conv4_rot = layers.Dense(4, input_shape=(512, 256*3*3))
-
+    self.conv4_rot = layers.Dense(4, input_shape=(256, 256*3*3))
 
   def call(self, inputs, training=True, predict_rotation=False):
     conv1 = tf.nn.leaky_relu(self.conv1(inputs))
@@ -81,7 +79,3 @@ class Discriminator(tf.keras.Model):
       conv4_base = self.conv4_base(conv3_bn)
       discriminator_logits = tf.squeeze(conv4_base, axis=[1, 2])
       return discriminator_logits
-
-
-
-

@@ -27,7 +27,7 @@ tf.get_logger().setLevel('ERROR')
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 from layers import Generator, Discriminator
-from loss import GANLoss, discriminator_loss, discriminator_loss_rot, generator_loss
+from loss import discriminator_loss, generator_loss
 
 # Training Flags (hyperparameter configuration)
 train_dir = 'train/01.dcgan/exp1/'
@@ -146,28 +146,29 @@ for epoch in range(max_epochs):
 
     # generating noise from a uniform distribution
     noise = tf.random.normal([batch_size, 1, 1, noise_dim])
-    rotation_n = tf.random.uniform([], minval=1, maxval=4, dtype=tf.dtypes.int32, seed=operation_seed)
+    rotation_n = tf.random.uniform([], minval=0, maxval=3, dtype=tf.dtypes.int32, seed=operation_seed)
     rotation = tf.cast(rotation_n, dtype=tf.float32) * np.pi/2.
 
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape, tf.GradientTape() as disc_rot_tape:
       generated_images = generator(noise, training=True)
+      images_rot = tf.image.rot90(images, k=rotation_n)
+      generated_images_rot = tf.image.rot90(generated_images, k=rotation_n)
+
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
-      rotated_images = tf.image.rot90(images, k=rotation_n)
-      fake_rot_logits = discriminator(rotated_images, training=True, predict_rotation=True)
+      real_logits_rot = discriminator(images_rot, training=True, predict_rotation=True)
+      fake_logits_rot = discriminator(generated_images_rot, training=True, predict_rotation=True)
 
-
-      gen_loss = generator_loss(fake_logits)
-      disc_loss = discriminator_loss(real_logits, fake_logits)
-      disc_loss_rot = discriminator_loss_rot(rotation_n-1, fake_rot_logits)
+      gen_loss = generator_loss(fake_logits, rotation_n, fake_logits_rot)
+      disc_loss = discriminator_loss(real_logits, fake_logits, rotation_n, real_logits_rot)
 
     gradients_of_generator = gen_tape.gradient(gen_loss, generator.variables)
     gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.variables)
-    gradients_of_discriminator_rot = disc_rot_tape.gradient(disc_loss_rot, discriminator.variables)
+    # gradients_of_discriminator_rot = disc_rot_tape.gradient(disc_loss_rot, discriminator.variables)
 
     generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.variables))
     discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.variables))
-    discriminator_rot_optimizer.apply_gradients(zip(gradients_of_discriminator_rot, discriminator.variables))
+    # discriminator_rot_optimizer.apply_gradients(zip(gradients_of_discriminator_rot, discriminator.variables))
 
     epochs = step * batch_size / float(len(train_data))
     duration = time.time() - start_time
@@ -192,7 +193,7 @@ for epoch in range(max_epochs):
     sample_data = generator(random_vector_for_generation, training=False)
     print_or_save_sample_images(sample_data.numpy(), is_save=True, epoch=epoch+1)
     print_or_save_sample_images(images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_")
-    print_or_save_sample_images(rotated_images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_TRANSFORMED_")
+    print_or_save_sample_images(images_rot.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_TRANSFORMED_")
 
   # saving (checkpoint) the model every save_epochs
   if (epoch + 1) % save_epochs == 0:
