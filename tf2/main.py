@@ -156,8 +156,9 @@ for epoch in range(max_epochs):
 
       real_logits = discriminator(images, training=True)
       fake_logits = discriminator(generated_images, training=True)
-      rotated_images = tf.image.rot90(images, k=rotation_n)
-      fake_rot_logits = discriminator(rotated_images, training=True, predict_rotation=True)
+      real_logits_rot = discriminator(images_rot, training=True, predict_rotation=True)
+      fake_logits_rot = discriminator(generated_images_rot, training=True, predict_rotation=True)
+
 
       if second_unpaired is True:
           generated_images_2 = generator(noise_2, training=True)
