@@ -212,6 +212,8 @@ for epoch in range(max_epochs):
     print("This images are saved at {} epoch".format(epoch+1))
     sample_data = generator(random_vector_for_generation, training=False)
     print_or_save_sample_images(sample_data.numpy(), is_save=True, epoch=epoch+1)
+    print_or_save_sample_images(images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_")
+    print_or_save_sample_images(rotated_images.numpy(), is_save=True, epoch=epoch+1, prefix="REAL_TRANSFORMED_")
 
   # saving (checkpoint) the model every save_epochs
   if (epoch + 1) % save_epochs == 0:
