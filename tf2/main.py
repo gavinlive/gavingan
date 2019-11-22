@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import PIL
 import imageio
 from IPython import display
-from scipy.ndimage.interpolation import zoom
 
 import tensorflow as tf
 from tensorflow.keras import layers
@@ -42,8 +41,8 @@ learning_rate_G = 0.0002
 k = 1 # the number of step of learning D before learning G
 num_examples_to_generate = 16
 noise_dim = 100
-full_save_epochs = 500
-full_save_num_images = 59904
+full_save_epochs = 1
+full_save_num_images = 49920
 second_unpaired = True
 
 
@@ -55,13 +54,16 @@ train_data = train_data.reshape(-1, 32, 32, 3).astype('float32')
 train_data = train_data / 255.
 train_labels = np.asarray(train_labels, dtype=np.int32)
 
+train_data = train_data[0:49920]
+train_labels = train_labels[0:49920]
+
 
 tf.random.set_seed(69)
 operation_seed = None
 
 # for train
 train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
-train_dataset = train_dataset.shuffle(buffer_size = 59904)
+train_dataset = train_dataset.shuffle(buffer_size = 60000)
 train_dataset = train_dataset.batch(batch_size = batch_size)
 
 
@@ -121,7 +123,6 @@ def generate_and_save_images(model, epoch, test_input):
   plt.show()
   plt.close('all')
 
-
 def stretch(img, s1, s2):
   old_shape = np.asarray(img.shape)
   stretched = zoom(img, zoom=(s1, s2, 1))
@@ -130,7 +131,6 @@ def stretch(img, s1, s2):
   max = new_shape - min
   stretched = stretched[int(min[0]):int(max[0]), int(min[1]):int(max[1])]
   return stretched
-
 
 def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None, prefix=""):
   print_images = sample_data[:max_print,:]
@@ -228,12 +228,13 @@ for epoch in range(max_epochs):
 
   # Save full batch of training images to calculate FID
   if (epoch + 1) % full_save_epochs == 0:
-    random_vector_for_full_save = tf.random.normal([full_save_num_images, 1, 1, noise_dim])
-    sample_data = generator(random_vector_for_full_save, training=False)
-    sample_blob = sample_data.numpy()
-    h5f = h5py.File('imageblob_epoch{}.h5'.format(epoch+1), 'w')
-    h5f.create_dataset('imageblob', data=sample_blob)
-    h5f.close()
+    for batch in range(full_save_num_images // batch_size):
+      random_vector_for_full_save = tf.random.normal([batch_size, 1, 1, noise_dim])
+      sample_data = generator(random_vector_for_full_save, training=False)
+      sample_blob = sample_data.numpy()
+      h5f = h5py.File('imageblob_epoch{}_{}.h5'.format(epoch+1, batch+1), 'w')
+      h5f.create_dataset('imageblob', data=sample_blob)
+      h5f.close()
 
 
 '''
