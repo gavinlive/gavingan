@@ -45,4 +45,5 @@ def discriminator_loss(real_logits, fake_logits, rotation_real, real_logits_rot)
 
 def generator_loss(fake_logits, rotation_real, fake_logits_rot):
   # losses of Generator with label "1" that used to fool the Discriminator
-  return GANLoss(logits=fake_logits, is_real=True) + rotation_loss(rotation_real, fake_logits_rot)
+  alpha = 0.2
+  return GANLoss(logits=fake_logits, is_real=True) + alpha * rotation_loss(rotation_real, fake_logits_rot)

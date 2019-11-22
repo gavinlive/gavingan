@@ -35,8 +35,8 @@ max_epochs = 5000
 save_epochs = 10
 print_steps = 100
 batch_size = 256
-learning_rate_D = 0.001
-learning_rate_G = 0.005
+learning_rate_D = 0.0002
+learning_rate_G = 0.0002
 k = 1 # the number of step of learning D before learning G
 num_examples_to_generate = 16
 noise_dim = 100
@@ -77,8 +77,7 @@ discriminator = Discriminator()
 #generator_optimizer = tf.train.AdamOptimizer(learning_rate_G, beta1=0.5)
 
 
-discriminator_rot_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
-discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate_D)
+discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate_D)
 generator_optimizer = tf.keras.optimizers.Adam(learning_rate_G, beta_1=0.5)
 
 
@@ -89,7 +88,9 @@ Checkpointing
 checkpoint_dir =  train_dir
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
-                                 discriminator_optimizer=discriminator_optimizer,discriminator_rot_optimizer=discriminator_rot_optimizer, generator=generator, discriminator=discriminator)
+                                 discriminator_optimizer=discriminator_optimizer,
+                                 generator=generator,
+                                 discriminator=discriminator)
 
 
 '''
