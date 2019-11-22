@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import PIL
 import imageio
 from IPython import display
+from scipy.ndimage.interpolation import zoom
 
 import tensorflow as tf
 from tensorflow.keras import layers
@@ -120,6 +121,15 @@ def generate_and_save_images(model, epoch, test_input):
   plt.show()
   plt.close('all')
 
+
+def stretch(img, s1, s2):
+  old_shape = np.asarray(img.shape)
+  stretched = zoom(img, zoom=(s1, s2, 1))
+  new_shape = np.asarray(stretched.shape)
+  min = (new_shape - old_shape) / 2
+  max = new_shape - min
+  stretched = stretched[int(min[0]):int(max[0]), int(min[1]):int(max[1])]
+  return stretched
 
 
 def print_or_save_sample_images(sample_data, max_print=num_examples_to_generate, is_save=False, epoch=None, prefix=""):
